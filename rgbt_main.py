@@ -109,12 +109,12 @@ class RGBTCam(QWidget):
                 self.tcamObj.end_acquisition()
                 acquisition_status = False
                 self.ui.label_2.setText('---')
-                self.ui.connectButton.setText("Scan and Connect \nThermal Camera")
+                self.ui.connectButton.setText("Scan and Connect Thermal Camera")
 
     def control_acquisition(self):
         global live_streaming_status
         if live_streaming_status == False:
-            self.ui.acquireButton.setText('Stop Live\nStreaming')
+            self.ui.acquireButton.setText('Stop Live Streaming')
             live_streaming_status = True
             self.ui.recordButton.setEnabled(True)
             self.updateLog("Acquisition started")
@@ -122,7 +122,7 @@ class RGBTCam(QWidget):
         else:
             live_streaming_status = False
             self.ui.recordButton.setEnabled(False)
-            self.ui.acquireButton.setText('Start Live\nStreaming')
+            self.ui.acquireButton.setText('Start Live Streaming')
             self.updateLog("Acquisition stopped")
 
     def control_recording(self):
@@ -132,13 +132,13 @@ class RGBTCam(QWidget):
             subdir_path = os.path.join(save_path, timestamp)
             if not os.path.exists(subdir_path):
                 os.makedirs(subdir_path)
-            self.ui.recordButton.setText('Stop\nRecording')
+            self.ui.recordButton.setText('Stop Recording')
             recording_status = True
             self.updateLog("Recording started")
 
         else:
             recording_status = False
-            self.ui.recordButton.setText('Record\nFrames')
+            self.ui.recordButton.setText('Record Frames')
             self.updateLog("Recording stopped")
 
     def updatePixmap(self, data_list):
@@ -168,6 +168,7 @@ class Communicate(QObject):
     data_signal = Signal(list)
     data_signal_rgb = Signal(list)
     save_signal = Signal(np.ndarray)
+    save_signal_rgb = Signal(np.ndarray)
     status_signal = Signal(str)
 
 def save_frame(thermal_matrix):
@@ -176,15 +177,22 @@ def save_frame(thermal_matrix):
     np.save(os.path.join(subdir_path, f'{num_frames:04d}' + '.npy'), thermal_matrix)
     
 
+def save_frame_rgb(rgb_matrix):
+    global num_frames, subdir_path
+    num_frames += 1
+    cv2.imwrite(os.path.join(subdir_path, f'{num_frames:04d}' + '.jpg'), rgb_matrix)
+
+
 def capture_frame_thread_rgb(updateRGBPixmap, updateLog):
     # Setup the signal-slot mechanism.
     mySrc = Communicate()
     mySrc.data_signal_rgb.connect(updateRGBPixmap)
     mySrc.status_signal.connect(updateLog)
+    mySrc.save_signal_rgb.connect(save_frame_rgb)
 
     global live_streaming_status, acquisition_status, camera_connect_status, keep_acquisition_thread
     global recording_status
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(2)
 
     while True:
         if keep_acquisition_thread:
@@ -195,6 +203,9 @@ def capture_frame_thread_rgb(updateRGBPixmap, updateLog):
 
                 if rgb_ret:
                     mySrc.data_signal_rgb.emit([rgb_matrix, rgb_ret])
+
+                    if recording_status:
+                        mySrc.save_signal_rgb.emit(rgb_matrix)
 
                 info_str = "RGB Frame acquisition status: " + str(rgb_ret) + "; " + info_str
                 # time.sleep(0.05)
@@ -225,8 +236,6 @@ def capture_frame_thread(tcamObj, updatePixmap, updateLog):
                 t1 = time.time()
                 info_str = ""
                 thermal_matrix, frame_status = tcamObj.capture_frame()
-                cap = cv2.VideoCapture(2)
-                rgb_ret, rgb_matrix = cap.read()
 
                 if frame_status == "valid" and thermal_matrix.size > 0:
                     min_temp = np.round(np.min(thermal_matrix), 2)
@@ -241,7 +250,8 @@ def capture_frame_thread(tcamObj, updatePixmap, updateLog):
                     canvas = FigureCanvas(fig)
                     ax = fig.add_subplot(111)
                     # ax.imshow(thermal_matrix, cmap='nipy_spectral')
-                    ax.imshow(thermal_matrix, cmap='rainbow')
+                    # ax.imshow(thermal_matrix, cmap='rainbow')
+                    ax.imshow(thermal_matrix, cmap='plasma')
                     ax.set_axis_off()
                     canvas.draw()
                     width, height = fig.figbbox.width, fig.figbbox.height
