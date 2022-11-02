@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1400</width>
-    <height>953</height>
+    <height>888</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -26,6 +26,100 @@
    <string>TIComp</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0" colspan="2">
+    <widget class="QLabel" name="label">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>1380</width>
+       <height>70</height>
+      </size>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>14</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>../../../../Downloads/figure.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="2">
+    <widget class="QLabel" name="log_label">
+     <property name="maximumSize">
+      <size>
+       <width>1280</width>
+       <height>30</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>Info Log</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="maximumSize">
+      <size>
+       <width>680</width>
+       <height>550</height>
+      </size>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="title">
+      <string>RGB Image Streaming</string>
+     </property>
+     <widget class="QLabel" name="pix_label_rgb">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>30</y>
+        <width>650</width>
+        <height>501</height>
+       </rect>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>650</width>
+        <height>520</height>
+       </size>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>RGB Image streaming will appear here</string>
+      </property>
+     </widget>
+    </widget>
+   </item>
    <item row="2" column="1">
     <widget class="QGroupBox" name="groupBox_2">
      <property name="sizePolicy">
@@ -108,7 +202,7 @@
      <property name="maximumSize">
       <size>
        <width>1380</width>
-       <height>250</height>
+       <height>220</height>
       </size>
      </property>
      <property name="font">
@@ -142,12 +236,15 @@
          </attribute>
          <layout class="QGridLayout" name="gridLayout_3">
           <item row="2" column="1">
-           <widget class="QLineEdit" name="lineEdit">
+           <widget class="QLineEdit" name="text_pid">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left</string>
             </property>
            </widget>
           </item>
@@ -159,7 +256,7 @@
            </widget>
           </item>
           <item row="0" column="0">
-           <widget class="QCheckBox" name="checkBox">
+           <widget class="QCheckBox" name="checkBox_Th">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -179,6 +276,64 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left</string>
+            </property>
+            <item>
+             <property name="text">
+              <string>CoolWarm</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GNUPlot2</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Gray</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Magma</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Nipy_Spectral</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Pink</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Plasma</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Prism</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Rainbow</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Seismic</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Terrain</string>
+             </property>
+            </item>
            </widget>
           </item>
           <item row="0" column="4" rowspan="4">
@@ -189,14 +344,14 @@
            </widget>
           </item>
           <item row="2" column="0">
-           <widget class="QLabel" name="label_5">
+           <widget class="QLabel" name="label_pid">
             <property name="text">
              <string>Participant ID</string>
             </property>
            </widget>
           </item>
           <item row="1" column="0">
-           <widget class="QCheckBox" name="checkBox_2">
+           <widget class="QCheckBox" name="checkBox_RGB">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -210,19 +365,37 @@
           </item>
           <item row="3" column="1">
            <widget class="QPushButton" name="recordButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left</string>
+            </property>
             <property name="text">
-             <string>Record Frames</string>
+             <string>Start Recording</string>
             </property>
            </widget>
           </item>
           <item row="1" column="1">
-           <widget class="QComboBox" name="comboBox_4">
+           <widget class="QComboBox" name="comboBox_RGB_Cam">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left</string>
+            </property>
             <item>
              <property name="text">
               <string>Select RGB Camera</string>
@@ -231,7 +404,10 @@
            </widget>
           </item>
           <item row="0" column="1">
-           <widget class="QPushButton" name="connectButton">
+           <widget class="QPushButton" name="connectButton_Thermal">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -243,13 +419,19 @@
               <pointsize>12</pointsize>
              </font>
             </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left</string>
+            </property>
             <property name="text">
-             <string>Scan and Connect Thermal Camera</string>
+             <string>Scan and Connect</string>
             </property>
            </widget>
           </item>
           <item row="3" column="0">
            <widget class="QPushButton" name="acquireButton">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -260,6 +442,9 @@
              <font>
               <pointsize>12</pointsize>
              </font>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left</string>
             </property>
             <property name="text">
              <string>Start Live Streaming</string>
@@ -288,6 +473,25 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left</string>
+            </property>
+            <property name="currentIndex">
+             <number>1</number>
+            </property>
+            <property name="maxVisibleItems">
+             <number>2</number>
+            </property>
+            <item>
+             <property name="text">
+              <string>Auto</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Manual</string>
+             </property>
+            </item>
            </widget>
           </item>
           <item row="1" column="7">
@@ -297,6 +501,15 @@
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">text-align:left</string>
+            </property>
+            <property name="currentIndex">
+             <number>4</number>
+            </property>
+            <property name="maxVisibleItems">
+             <number>5</number>
             </property>
             <item>
              <property name="text">
@@ -346,12 +559,24 @@
            </widget>
           </item>
           <item row="3" column="6" colspan="2">
-           <widget class="QSlider" name="horizontalSlider">
+           <widget class="QSlider" name="horizontalSlider_focus">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
+            </property>
+            <property name="maximum">
+             <number>255</number>
+            </property>
+            <property name="singleStep">
+             <number>5</number>
+            </property>
+            <property name="pageStep">
+             <number>20</number>
+            </property>
+            <property name="sliderPosition">
+             <number>25</number>
             </property>
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -397,100 +622,6 @@
        </widget>
       </item>
      </layout>
-    </widget>
-   </item>
-   <item row="2" column="0">
-    <widget class="QGroupBox" name="groupBox_3">
-     <property name="maximumSize">
-      <size>
-       <width>680</width>
-       <height>550</height>
-      </size>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>12</pointsize>
-      </font>
-     </property>
-     <property name="title">
-      <string>RGB Image Streaming</string>
-     </property>
-     <widget class="QLabel" name="pix_label_rgb">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>30</y>
-        <width>650</width>
-        <height>501</height>
-       </rect>
-      </property>
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>650</width>
-        <height>520</height>
-       </size>
-      </property>
-      <property name="font">
-       <font>
-        <pointsize>12</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>RGB Image streaming will appear here</string>
-      </property>
-     </widget>
-    </widget>
-   </item>
-   <item row="0" column="0" colspan="2">
-    <widget class="QLabel" name="label">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>1380</width>
-       <height>70</height>
-      </size>
-     </property>
-     <property name="font">
-      <font>
-       <pointsize>14</pointsize>
-      </font>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-     <property name="pixmap">
-      <pixmap>../../../../Downloads/figure.png</pixmap>
-     </property>
-     <property name="scaledContents">
-      <bool>true</bool>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0" colspan="2">
-    <widget class="QLabel" name="log_label">
-     <property name="maximumSize">
-      <size>
-       <width>1280</width>
-       <height>30</height>
-      </size>
-     </property>
-     <property name="text">
-      <string>Logging area</string>
-     </property>
     </widget>
    </item>
   </layout>

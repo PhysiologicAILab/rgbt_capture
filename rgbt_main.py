@@ -25,6 +25,8 @@ import cv2
 
 global camera_connect_status, acquisition_status, live_streaming_status, keep_acquisition_thread
 global recording_status, save_path, num_frames, subdir_path
+global capture_thermal, capture_rgb
+
 acquisition_status = False
 live_streaming_status = False
 recording_status = False
@@ -53,7 +55,10 @@ class RGBTCam(QWidget):
         self.seg_img_width = 640 #input_size[0]
         self.seg_img_height = 512 #input_size[1]
 
-        self.ui.connectButton.pressed.connect(self.scan_and_connect_camera)
+        self.ui.checkBox_Th.stateChanged.connect(lambda:self.btnstate(self.ui.checkBox_Th))
+        self.ui.checkBox_RGB.stateChanged.connect(lambda:self.btnstate(self.ui.checkBox_RGB))
+
+        self.ui.connectButton_Thermal.pressed.connect(self.scan_and_connect_camera)
         self.ui.acquireButton.pressed.connect(self.control_acquisition)
         self.ui.recordButton.pressed.connect(self.control_recording)
 
@@ -82,6 +87,29 @@ class RGBTCam(QWidget):
         if camera_connect_status and acquisition_status:
             self.tcamObj.release_camera(acquisition_status)
 
+    def btnstate(self, b):
+        global capture_thermal, capture_rgb
+
+        if b.text() == "Capture Thermal":
+            if b.isChecked() == True:
+                capture_thermal = True
+                self.updateLog(b.text()+" is selected")
+                self.ui.connectButton_Thermal.setEnabled(True)
+            else:
+                capture_thermal = False
+                self.updateLog(b.text()+" is deselected")
+                self.ui.connectButton_Thermal.setEnabled(False)
+				
+        if b.text() == "Capture RGB":
+            if b.isChecked() == True:
+                capture_rgb = True
+                self.updateLog(b.text()+" is selected")
+                self.ui.comboBox_RGB_Cam.setEnabled(True)
+            else:
+                capture_rgb = False
+                self.updateLog(b.text()+" is deselected")
+                self.ui.comboBox_RGB_Cam.setEnabled(False)
+
     def scan_and_connect_camera(self):
         global acquisition_status, camera_connect_status
 
@@ -89,7 +117,7 @@ class RGBTCam(QWidget):
             if self.tcamObj.get_camera():
                 self.cam_serial_number, self.cam_img_width, self.cam_img_height = self.tcamObj.setup_camera()
                 if "error" not in self.cam_serial_number.lower():
-                    self.ui.connectButton.setText("Disconnect Camera")
+                    self.ui.connectButton_Thermal.setText("Disconnect Camera")
                     self.updateLog("Camera Serial Number: " + self.cam_serial_number)
                     camera_connect_status = True
                     self.img_width = self.seg_img_width
@@ -102,14 +130,14 @@ class RGBTCam(QWidget):
                 self.ui.acquireButton.setEnabled(True)
                 acquisition_status = True
                 self.updateLog("Camera Serial Number: " + self.cam_serial_number)
-                self.ui.connectButton.setText("Disconnect Camera")
+                self.ui.connectButton_Thermal.setText("Disconnect Camera")
                 self.tcamObj.begin_acquisition()
             else:
                 self.ui.acquireButton.setEnabled(False)
                 self.tcamObj.end_acquisition()
                 acquisition_status = False
                 self.updateLog('No thermal camera connected')
-                self.ui.connectButton.setText("Scan and Connect Thermal Camera")
+                self.ui.connectButton_Thermal.setText("Scan and Connect Thermal Camera")
 
     def control_acquisition(self):
         global live_streaming_status
@@ -193,6 +221,7 @@ def capture_frame_thread_rgb(updateRGBPixmap, updateLog):
     global live_streaming_status, acquisition_status, camera_connect_status, keep_acquisition_thread
     global recording_status
     cam = cv2.VideoCapture(0)
+    cam.set(cv2.CAP_PROP_AUTOFOCUS, 0)
     focus = 50  # min: 0, max: 255, increment:5
     cam.set(28, focus)
 
