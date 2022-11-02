@@ -192,14 +192,16 @@ def capture_frame_thread_rgb(updateRGBPixmap, updateLog):
 
     global live_streaming_status, acquisition_status, camera_connect_status, keep_acquisition_thread
     global recording_status
-    cap = cv2.VideoCapture(2)
+    cam = cv2.VideoCapture(2)
+    focus = 0  # min: 0, max: 255, increment:5
+    cam.set(28, focus)
 
     while True:
         if keep_acquisition_thread:
             if camera_connect_status and acquisition_status and live_streaming_status:
                 t1 = time.time()
                 info_str = ""
-                rgb_ret, rgb_matrix = cap.read()
+                rgb_ret, rgb_matrix = cam.read()
 
                 if rgb_ret:
                     mySrc.data_signal_rgb.emit([rgb_matrix, rgb_ret])
