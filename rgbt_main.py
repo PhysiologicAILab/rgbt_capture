@@ -90,25 +90,25 @@ class RGBTCam(QWidget):
                 self.cam_serial_number, self.cam_img_width, self.cam_img_height = self.tcamObj.setup_camera()
                 if "error" not in self.cam_serial_number.lower():
                     self.ui.connectButton.setText("Disconnect Camera")
-                    self.ui.label_2.setText("Camera Serial Number: " + self.cam_serial_number)
+                    self.updateLog("Camera Serial Number: " + self.cam_serial_number)
                     camera_connect_status = True
                     self.img_width = self.seg_img_width
                     self.img_height = self.seg_img_height
                 else:
-                    self.ui.label_2.setText("Error Setting Up Camera: " + self.cam_serial_number)
+                    self.updateLog("Error Setting Up Camera: " + self.cam_serial_number)
 
         if camera_connect_status:
             if acquisition_status == False:
                 self.ui.acquireButton.setEnabled(True)
                 acquisition_status = True
-                self.ui.label_2.setText("Camera Serial Number: " + self.cam_serial_number)
+                self.updateLog("Camera Serial Number: " + self.cam_serial_number)
                 self.ui.connectButton.setText("Disconnect Camera")
                 self.tcamObj.begin_acquisition()
             else:
                 self.ui.acquireButton.setEnabled(False)
                 self.tcamObj.end_acquisition()
                 acquisition_status = False
-                self.ui.label_2.setText('---')
+                self.updateLog('No thermal camera connected')
                 self.ui.connectButton.setText("Scan and Connect Thermal Camera")
 
     def control_acquisition(self):
@@ -192,8 +192,8 @@ def capture_frame_thread_rgb(updateRGBPixmap, updateLog):
 
     global live_streaming_status, acquisition_status, camera_connect_status, keep_acquisition_thread
     global recording_status
-    cam = cv2.VideoCapture(2)
-    focus = 0  # min: 0, max: 255, increment:5
+    cam = cv2.VideoCapture(0)
+    focus = 50  # min: 0, max: 255, increment:5
     cam.set(28, focus)
 
     while True:
