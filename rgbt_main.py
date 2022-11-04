@@ -23,15 +23,20 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import cv2
 
-global camera_connect_status, acquisition_status, live_streaming_status, keep_acquisition_thread
+global thermal_camera_connect_status, rgb_camera_connect_status, acquisition_status, keep_acquisition_thread, acquisition_thread_rgb_live
 global recording_status, save_path, num_frames, subdir_path
-global capture_thermal, capture_rgb
+global capture_thermal, capture_rgb, pseudocolor, fps
 
+capture_rgb = False
+capture_thermal = False
 acquisition_status = False
-live_streaming_status = False
 recording_status = False
-camera_connect_status = False
+thermal_camera_connect_status = False
+rgb_camera_connect_status = False
 keep_acquisition_thread = True
+acquisition_thread_rgb_live = False
+pseudocolor = 'coolwarm'
+fps = 30
 save_path = "recorded_frames"
 num_frames = 0
 
@@ -50,6 +55,17 @@ class RGBTCam(QWidget):
         self.ui = loader.load(ui_file, self)
         
         self.tcamObj = tcam()
+        self.pseudocolor_list = ['CoolWarm', 'GNUPlot2', 'Gray', 'Magma',
+                                 'Nipy_Spectral', 'Pink', 'Plasma', 'Prism', 'Rainbow', 'Seismic', 'Terrain']
+        self.fps_list = [1, 2, 5, 10, 15, 25, 30, 60]
+
+        self.camObj = None
+        self.focus_rgb = 20
+
+        self.rgb_focus_type = 1 #0: Manual; 1: Autofocus
+        self.rgb_focus_type_options = [1, 0]
+        self.study_name = ""
+        self.participant_id = ""
 
         # input_size = self.configer.get('test', 'data_transformer')['input_size']
         self.seg_img_width = 640 #input_size[0]
@@ -57,8 +73,16 @@ class RGBTCam(QWidget):
 
         self.ui.checkBox_Th.stateChanged.connect(lambda:self.btnstate(self.ui.checkBox_Th))
         self.ui.checkBox_RGB.stateChanged.connect(lambda:self.btnstate(self.ui.checkBox_RGB))
+        self.ui.text_study.textChanged.connect(self.update_study_name)
+        self.ui.text_pid.textChanged.connect(self.update_pid)
 
-        self.ui.connectButton_Thermal.pressed.connect(self.scan_and_connect_camera)
+        self.ui.connectButton_Thermal.pressed.connect(self.scan_and_connect_thermal_camera)
+        self.ui.comboBox_RGB_Cam.currentIndexChanged.connect(self.scan_and_connect_rgb_camera)
+        self.ui.comboBox_vis.currentIndexChanged.connect(self.update_thermal_pseudocolor)
+        self.ui.comboBox_fps.currentIndexChanged.connect(self.update_frame_rate)
+        self.ui.comboBox_focus.currentIndexChanged.connect(self.update_rgb_focus_type)
+        self.ui.horizontalSlider_focus.valueChanged.connect(self.adjust_rgb_focus)
+
         self.ui.acquireButton.pressed.connect(self.control_acquisition)
         self.ui.recordButton.pressed.connect(self.control_recording)
 
@@ -66,25 +90,19 @@ class RGBTCam(QWidget):
         self.ui.acquireButton.setEnabled(False)
         self.ui.recordButton.setEnabled(False)
 
-        # self.fps = 50.0
-        self.fps = 30.0
-
         self.imgAcqLoop = threading.Thread(name='imgAcqLoop', target=capture_frame_thread, daemon=True, args=(
             self.tcamObj, self.updatePixmap, self.updateLog))
         self.imgAcqLoop.start()
 
-        self.imgAcqLoop_rgb = threading.Thread(name='imgAcqLoop_rgb', target=capture_frame_thread_rgb, daemon=True, args=(
-            self.updateRGBPixmap, self.updateLog))
-        self.imgAcqLoop_rgb.start()
-
         ui_file.close()
 
     def closeEvent(self, event):
-        global camera_connect_status, acquisition_status, keep_acquisition_thread
+        global thermal_camera_connect_status, acquisition_status, keep_acquisition_thread, acquisition_thread_rgb_live
         keep_acquisition_thread = False
+        acquisition_thread_rgb_live = False
         print("Please wait while camera is released...")
         time.sleep(0.5)
-        if camera_connect_status and acquisition_status:
+        if thermal_camera_connect_status and acquisition_status:
             self.tcamObj.release_camera(acquisition_status)
 
     def btnstate(self, b):
@@ -110,54 +128,149 @@ class RGBTCam(QWidget):
                 self.updateLog(b.text()+" is deselected")
                 self.ui.comboBox_RGB_Cam.setEnabled(False)
 
-    def scan_and_connect_camera(self):
-        global acquisition_status, camera_connect_status
+        self.enable_acquisition()
 
-        if camera_connect_status == False:
+
+    def update_frame_rate(self, indx):
+        global fps
+        fps = self.fps_list[indx]
+
+
+    def scan_and_connect_rgb_camera(self, indx):
+
+        global acquisition_thread_rgb_live, rgb_camera_connect_status, fps
+
+        if acquisition_thread_rgb_live:
+            acquisition_thread_rgb_live = False
+            time.sleep(1)
+        try:
+            cam_index = int(indx)
+            self.camObj = cv2.VideoCapture(cam_index)
+            rgb_camera_connect_status = True
+        except:
+            rgb_camera_connect_status = False
+
+        if rgb_camera_connect_status:
+            self.camObj.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+            self.camObj.set(cv2.CAP_PROP_FPS, fps)
+            self.camObj.set(28, self.focus_rgb)     # min: 0, max: 255, increment:5
+
+            if not acquisition_thread_rgb_live:
+                acquisition_thread_rgb_live = True
+                self.imgAcqLoop_rgb = threading.Thread(name='imgAcqLoop_rgb', target=capture_frame_thread_rgb, daemon=True, args=(
+                    self.camObj, self.updateRGBPixmap, self.updateLog))
+                self.imgAcqLoop_rgb.start()
+
+        self.enable_acquisition()
+
+
+    def update_thermal_pseudocolor(self, indx):
+        global pseudocolor
+        pseudocolor = self.pseudocolor_list[indx].lower()
+
+    
+    def adjust_rgb_focus(self):
+        global rgb_camera_connect_status
+        self.focus_rgb = self.ui.horizontalSlider_focus.value()
+        if rgb_camera_connect_status:
+            self.camObj.set(28, self.focus_rgb)
+
+    
+    def update_rgb_focus_type(self, indx):
+        global rgb_camera_connect_status
+        self.rgb_focus_type = self.rgb_focus_type_options[indx]
+        if rgb_camera_connect_status:
+            self.camObj.set(cv2.CAP_PROP_AUTOFOCUS, self.rgb_focus_type)
+
+
+    def update_study_name(self, text):
+        self.study_name = self.ui.text_study.text()
+
+
+    def update_pid(self, text):
+        self.participant_id = self.ui.text_pid.text()
+
+
+    def scan_and_connect_thermal_camera(self):
+        global acquisition_status, thermal_camera_connect_status
+
+        if thermal_camera_connect_status == False:
             if self.tcamObj.get_camera():
                 self.cam_serial_number, self.cam_img_width, self.cam_img_height = self.tcamObj.setup_camera()
                 if "error" not in self.cam_serial_number.lower():
                     self.ui.connectButton_Thermal.setText("Disconnect Camera")
                     self.updateLog("Camera Serial Number: " + self.cam_serial_number)
-                    camera_connect_status = True
+                    thermal_camera_connect_status = True
+                    self.tcamObj.begin_acquisition()
                     self.img_width = self.seg_img_width
                     self.img_height = self.seg_img_height
                 else:
                     self.updateLog("Error Setting Up Camera: " + self.cam_serial_number)
 
-        if camera_connect_status:
-            if acquisition_status == False:
-                self.ui.acquireButton.setEnabled(True)
-                acquisition_status = True
-                self.updateLog("Camera Serial Number: " + self.cam_serial_number)
-                self.ui.connectButton_Thermal.setText("Disconnect Camera")
-                self.tcamObj.begin_acquisition()
+        else:
+            # self.ui.acquireButton.setEnabled(False)
+            thermal_camera_connect_status = False
+            self.tcamObj.end_acquisition()
+            self.updateLog('Thermal camera disconnected')
+            self.ui.connectButton_Thermal.setText("Scan and Connect Thermal Camera")            
+
+        self.enable_acquisition()
+        # if thermal_camera_connect_status:
+        #     if acquisition_status == False:
+        #         self.ui.acquireButton.setEnabled(True)
+        #         self.updateLog("Camera Serial Number: " + self.cam_serial_number)
+        #         self.ui.connectButton_Thermal.setText("Disconnect Camera")
+        #         self.tcamObj.begin_acquisition()
+        #     else:
+        #         self.ui.acquireButton.setEnabled(False)
+        #         self.tcamObj.end_acquisition()
+        #         self.updateLog('No thermal camera connected')
+        #         self.ui.connectButton_Thermal.setText("Scan and Connect Thermal Camera")
+
+    def enable_acquisition(self):
+        
+        global capture_rgb, capture_thermal, thermal_camera_connect_status, rgb_camera_connect_status
+        enable_acquisition = True
+        
+        if capture_thermal:
+            if thermal_camera_connect_status:
+                enable_acquisition = enable_acquisition and True
             else:
-                self.ui.acquireButton.setEnabled(False)
-                self.tcamObj.end_acquisition()
-                acquisition_status = False
-                self.updateLog('No thermal camera connected')
-                self.ui.connectButton_Thermal.setText("Scan and Connect Thermal Camera")
+                enable_acquisition = False
+        
+        if capture_rgb:
+            if rgb_camera_connect_status:
+                enable_acquisition = enable_acquisition and True
+            else:
+                enable_acquisition = False
+            
+        if enable_acquisition:
+            self.ui.acquireButton.setEnabled(True)
+        else:
+            self.ui.acquireButton.setEnabled(False)
+
 
     def control_acquisition(self):
-        global live_streaming_status
-        if live_streaming_status == False:
+        global acquisition_status, thermal_camera_connect_status, rgb_camera_connect_status, capture_rgb, capture_thermal
+
+        if acquisition_status == False:
             self.ui.acquireButton.setText('Stop Live Streaming')
-            live_streaming_status = True
+            acquisition_status = True
             self.ui.recordButton.setEnabled(True)
             self.updateLog("Acquisition started")
 
         else:
-            live_streaming_status = False
+            acquisition_status = False
             self.ui.recordButton.setEnabled(False)
             self.ui.acquireButton.setText('Start Live Streaming')
             self.updateLog("Acquisition stopped")
 
     def control_recording(self):
         global save_path, recording_status, subdir_path
+
         if recording_status == False:
             timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H-%M-%S')
-            subdir_path = os.path.join(save_path, timestamp)
+            subdir_path = os.path.join(save_path, self.study_name, self.participant_id, timestamp)
             if not os.path.exists(subdir_path):
                 os.makedirs(subdir_path)
             self.ui.recordButton.setText('Stop Recording')
@@ -202,35 +315,35 @@ class Communicate(QObject):
 def save_frame(thermal_matrix):
     global num_frames, subdir_path
     num_frames += 1
-    np.save(os.path.join(subdir_path, f'{num_frames:04d}' + '.npy'), thermal_matrix)
+    utc_sec = str((datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).total_seconds()).replace('.', '_')
+    np.save(os.path.join(subdir_path, f'{num_frames:05d}' + '_' + utc_sec + '.npy'), thermal_matrix)
     
 
 def save_frame_rgb(rgb_matrix):
     global num_frames, subdir_path
     num_frames += 1
-    cv2.imwrite(os.path.join(subdir_path, f'{num_frames:04d}' + '.jpg'), rgb_matrix)
+    utc_sec = str((datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).total_seconds()).replace('.', '_')
+    cv2.imwrite(os.path.join(subdir_path, f'{num_frames:05d}' + '_' + utc_sec + '.jpg'), rgb_matrix)
 
 
-def capture_frame_thread_rgb(updateRGBPixmap, updateLog):
+def capture_frame_thread_rgb(camObj, updateRGBPixmap, updateLog):
     # Setup the signal-slot mechanism.
     mySrc = Communicate()
     mySrc.data_signal_rgb.connect(updateRGBPixmap)
     mySrc.status_signal.connect(updateLog)
     mySrc.save_signal_rgb.connect(save_frame_rgb)
 
-    global live_streaming_status, acquisition_status, camera_connect_status, keep_acquisition_thread
+    global acquisition_status, rgb_camera_connect_status, acquisition_thread_rgb_live
     global recording_status
-    cam = cv2.VideoCapture(0)
-    cam.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-    focus = 50  # min: 0, max: 255, increment:5
-    cam.set(28, focus)
 
     while True:
-        if keep_acquisition_thread:
-            if camera_connect_status and acquisition_status and live_streaming_status:
+        if acquisition_thread_rgb_live:
+            if rgb_camera_connect_status and acquisition_status:
                 t1 = time.time()
                 info_str = ""
-                rgb_ret, rgb_matrix = cam.read()
+                rgb_ret, rgb_matrix = camObj.read()
+
+                rgb_matrix = cv2.rotate(rgb_matrix, cv2.ROTATE_180)
 
                 if rgb_ret:
                     mySrc.data_signal_rgb.emit([rgb_matrix, rgb_ret])
@@ -244,6 +357,7 @@ def capture_frame_thread_rgb(updateRGBPixmap, updateLog):
                 t_elapsed = str(t2 - t1)
                 info_str = info_str + "; total_time_per_frame RGB: " + t_elapsed
                 mySrc.status_signal.emit(info_str)
+                time.sleep(0.1)
 
             else:
                 time.sleep(0.25)
@@ -258,15 +372,16 @@ def capture_frame_thread(tcamObj, updatePixmap, updateLog):
     mySrc.status_signal.connect(updateLog)
     mySrc.save_signal.connect(save_frame)
 
-    global live_streaming_status, acquisition_status, camera_connect_status, keep_acquisition_thread
-    global recording_status
+    global acquisition_status, thermal_camera_connect_status, keep_acquisition_thread
+    global recording_status, pseudocolor
 
     while True:
         if keep_acquisition_thread:
-            if camera_connect_status and acquisition_status and live_streaming_status:
+            if thermal_camera_connect_status and acquisition_status:
                 t1 = time.time()
                 info_str = ""
                 thermal_matrix, frame_status = tcamObj.capture_frame()
+                thermal_matrix = cv2.rotate(thermal_matrix, cv2.ROTATE_180)
 
                 if frame_status == "valid" and thermal_matrix.size > 0:
                     min_temp = np.round(np.min(thermal_matrix), 2)
@@ -274,15 +389,12 @@ def capture_frame_thread(tcamObj, updatePixmap, updateLog):
  
                     if recording_status:
                         mySrc.save_signal.emit(thermal_matrix)
-
                         info_str = "[Min Temp, Max Temp] = " + str([min_temp, max_temp])
 
                     fig = Figure(tight_layout=True)
                     canvas = FigureCanvas(fig)
                     ax = fig.add_subplot(111)
-                    # ax.imshow(thermal_matrix, cmap='nipy_spectral')
-                    # ax.imshow(thermal_matrix, cmap='rainbow')
-                    ax.imshow(thermal_matrix, cmap='plasma')
+                    ax.imshow(thermal_matrix, cmap=pseudocolor)
                     ax.set_axis_off()
                     canvas.draw()
                     width, height = fig.figbbox.width, fig.figbbox.height
@@ -294,6 +406,7 @@ def capture_frame_thread(tcamObj, updatePixmap, updateLog):
                 t_elapsed = str(t2 - t1)
                 info_str = info_str + "; total_time_per_frame: " + t_elapsed
                 mySrc.status_signal.emit(info_str)
+                time.sleep(0.1)
 
             else:
                 time.sleep(0.25)

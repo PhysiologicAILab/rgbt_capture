@@ -42,9 +42,16 @@ class CameraManager():
         self.nodemap_tldevice = self.cam.GetTLDeviceNodeMap()
         # Initialize camera
         self.cam.Init()
+
         # Retrieve GenICam nodemap
         self.nodemap = self.cam.GetNodeMap()
         self.sNodemap = self.cam.GetTLStreamNodeMap()
+
+        # self.cam.AcquisitionFrameRateAuto = 'Off'
+        # self.cam.AcquisitionFrameRateEnabled = True
+        # self.cam.AcquisitionFrameRate.SetValue(10)
+        # node_fps = PySpin.CIntegerPtr(self.nodemap.GetNode('AcquisitionFrameRate'))
+        # node_fps.SetValue(10)
 
         # Change bufferhandling mode to NewestOnly
         node_bufferhandling_mode = PySpin.CEnumerationPtr(self.sNodemap.GetNode('StreamBufferHandlingMode'))
@@ -84,8 +91,6 @@ class CameraManager():
             # Set integer value from entry node as new value of enumeration node
             node_acquisition_mode.SetIntValue(acquisition_mode_continuous)
 
-            # self.cam.BeginAcquisition()
-            # print('Acquiring images...')
 
             device_serial_number = ''
             node_device_serial_number = PySpin.CStringPtr(self.nodemap_tldevice.GetNode('DeviceSerialNumber'))
@@ -111,7 +116,6 @@ class CameraManager():
 
             img_width = int(node_width.GetValue())
             img_height = int(node_height.GetValue())
-
 
             # Apply mono 14 pixel format
             node_pixel_format = PySpin.CEnumerationPtr(self.nodemap.GetNode('PixelFormat'))
@@ -153,7 +157,37 @@ class CameraManager():
             else:
                 print('TemperatureLinearResolution High not available...')
 
+            '''
+            # FrameRate control, Disabling auto frame rate
+            self.acquisition_rate_node = self.cam.AcquisitionFrameRate
+            node_acquisition_frame_rate_control_enable = PySpin.CBooleanPtr(self.nodemap.GetNode("AcquisitionFrameRateEnable"))
+            if PySpin.IsAvailable(node_acquisition_frame_rate_control_enable):  # older simpler api
+                self.cam.AcquisitionFrameRateEnable.SetValue(True)
+            else:  # newer more complex api
+                frame_rate_auto_node = PySpin.CEnumerationPtr(self.nodemap.GetNode("AcquisitionFrameRateAuto"))
+                node_frame_rate_auto_off = frame_rate_auto_node.GetEntryByName("Off")
+
+                frame_rate_auto_off = node_frame_rate_auto_off.GetValue()
+                frame_rate_auto_node.SetIntValue(frame_rate_auto_off)
+                enable_rate_mode = PySpin.CBooleanPtr(
+                    self.nodemap.GetNode("AcquisitionFrameRateEnabled")
+                )
+                if not PySpin.IsAvailable(enable_rate_mode) or not PySpin.IsWritable(
+                    enable_rate_mode
+                ):
+                    print("W:enable_rate_mode not available/writable. Aborting...")
+                try:
+                    enable_rate_mode.SetValue(True)
+                except PySpin.SpinnakerException as ex:
+                    print("E:Could not enable frame rate: {0}".format(ex))
+
+                # Check to make sure frame rate is now writeable
+                if self.acquisition_rate_node.GetAccessMode() != PySpin.RW:
+                    print("W:Frame rate mode was not set to read&write.")
+            self.acquisition_rate_node.SetValue(10)
+            '''
             return device_serial_number, img_width, img_height
+
 
         except PySpin.SpinnakerException as ex:
             print('Error: %s' % ex)
