@@ -6,26 +6,25 @@ import threading
 import time
 import datetime
 import numpy as np
-import copy
+from copy import deepcopy
 import argparse
 
 import cv2
 from utils.flircamera import CameraManager as tcam
-from utils.signal_processing_lib import lFilter
 
-from PySide6.QtWidgets import QApplication, QWidget, QGraphicsScene
+from PySide6.QtWidgets import QApplication, QWidget
 from PySide6.QtCore import QFile, QObject, Signal, Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtGui import QPixmap, QImage
-import pyqtgraph as pg
 from pathlib import Path
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 import cv2
 
 global thermal_camera_connect_status, rgb_camera_connect_status, acquisition_status, keep_acquisition_thread, acquisition_thread_rgb_live
-global recording_status, save_path, num_frames, subdir_path
+global recording_status, save_path, num_frames, subdir_path, num_frames_rgb
 global capture_thermal, capture_rgb, pseudocolor, fps
+global use_lock_rgb_capture_with_thermal, enable_rgb_capture_with_lock
 
 capture_rgb = False
 capture_thermal = False
@@ -35,10 +34,14 @@ thermal_camera_connect_status = False
 rgb_camera_connect_status = False
 keep_acquisition_thread = True
 acquisition_thread_rgb_live = False
+use_lock_rgb_capture_with_thermal = False
+enable_rgb_capture_with_lock = False
+
 pseudocolor = 'coolwarm'
 fps = 30
 save_path = "recorded_frames"
 num_frames = 0
+num_frames_rgb = 0
 
 class RGBTCam(QWidget):
     def __init__(self, args_parser):
@@ -60,7 +63,7 @@ class RGBTCam(QWidget):
         self.fps_list = [1, 2, 5, 10, 15, 25, 30, 60]
 
         self.camObj = None
-        self.focus_rgb = 20
+        self.focus_rgb = int(0.35 * 256)
 
         self.rgb_focus_type = 1 #0: Manual; 1: Autofocus
         self.rgb_focus_type_options = [1, 0]
@@ -215,17 +218,7 @@ class RGBTCam(QWidget):
             self.ui.connectButton_Thermal.setText("Scan and Connect Thermal Camera")            
 
         self.enable_acquisition()
-        # if thermal_camera_connect_status:
-        #     if acquisition_status == False:
-        #         self.ui.acquireButton.setEnabled(True)
-        #         self.updateLog("Camera Serial Number: " + self.cam_serial_number)
-        #         self.ui.connectButton_Thermal.setText("Disconnect Camera")
-        #         self.tcamObj.begin_acquisition()
-        #     else:
-        #         self.ui.acquireButton.setEnabled(False)
-        #         self.tcamObj.end_acquisition()
-        #         self.updateLog('No thermal camera connected')
-        #         self.ui.connectButton_Thermal.setText("Scan and Connect Thermal Camera")
+
 
     def enable_acquisition(self):
         
@@ -320,10 +313,15 @@ def save_frame(thermal_matrix):
     
 
 def save_frame_rgb(rgb_matrix):
-    global num_frames, subdir_path
-    num_frames += 1
+    global num_frames_rgb, subdir_path, use_lock_rgb_capture_with_thermal
+
+    if not use_lock_rgb_capture_with_thermal:
+        num_frames_rgb += 1
+    else:
+        num_frames_rgb = num_frames
+
     utc_sec = str((datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).total_seconds()).replace('.', '_')
-    cv2.imwrite(os.path.join(subdir_path, f'{num_frames:05d}' + '_' + utc_sec + '.jpg'), rgb_matrix)
+    cv2.imwrite(os.path.join(subdir_path, f'{num_frames_rgb:05d}' + '_' + utc_sec + '.png'), rgb_matrix)
 
 
 def capture_frame_thread_rgb(camObj, updateRGBPixmap, updateLog):
@@ -334,30 +332,33 @@ def capture_frame_thread_rgb(camObj, updateRGBPixmap, updateLog):
     mySrc.save_signal_rgb.connect(save_frame_rgb)
 
     global acquisition_status, rgb_camera_connect_status, acquisition_thread_rgb_live
-    global recording_status
+    global recording_status, use_lock_rgb_capture_with_thermal, enable_rgb_capture_with_lock
 
     while True:
         if acquisition_thread_rgb_live:
             if rgb_camera_connect_status and acquisition_status:
-                t1 = time.time()
-                info_str = ""
-                rgb_ret, rgb_matrix = camObj.read()
+                if not use_lock_rgb_capture_with_thermal or (use_lock_rgb_capture_with_thermal and enable_rgb_capture_with_lock):
+                    t1 = time.time()
+                    info_str = ""
+                    rgb_ret, rgb_matrix = camObj.read()
 
-                rgb_matrix = cv2.rotate(rgb_matrix, cv2.ROTATE_180)
+                    rgb_matrix = cv2.rotate(rgb_matrix, cv2.ROTATE_180)
+                    enable_rgb_capture_with_lock = False
 
-                if rgb_ret:
-                    mySrc.data_signal_rgb.emit([rgb_matrix, rgb_ret])
+                    if rgb_ret:
+                        rgb_matrix_vis = deepcopy(rgb_matrix)
+                        mySrc.data_signal_rgb.emit([rgb_matrix_vis, rgb_ret])
 
-                    if recording_status:
-                        mySrc.save_signal_rgb.emit(rgb_matrix)
+                        if recording_status:
+                            mySrc.save_signal_rgb.emit(rgb_matrix)
 
-                info_str = "RGB Frame acquisition status: " + str(rgb_ret) + "; " + info_str
-                # time.sleep(0.05)
-                t2 = time.time()
-                t_elapsed = str(t2 - t1)
-                info_str = info_str + "; total_time_per_frame RGB: " + t_elapsed
-                mySrc.status_signal.emit(info_str)
-                time.sleep(0.1)
+                    info_str = "RGB Frame acquisition status: " + str(rgb_ret) + "; " + info_str
+                    # time.sleep(0.05)
+                    t2 = time.time()
+                    t_elapsed = str(t2 - t1)
+                    info_str = info_str + "; total_time_per_frame RGB: " + t_elapsed
+                    mySrc.status_signal.emit(info_str)
+                    # time.sleep(0.1)
 
             else:
                 time.sleep(0.25)
@@ -373,7 +374,7 @@ def capture_frame_thread(tcamObj, updatePixmap, updateLog):
     mySrc.save_signal.connect(save_frame)
 
     global acquisition_status, thermal_camera_connect_status, keep_acquisition_thread
-    global recording_status, pseudocolor
+    global recording_status, pseudocolor, use_lock_rgb_capture_with_thermal, enable_rgb_capture_with_lock
 
     while True:
         if keep_acquisition_thread:
@@ -384,6 +385,8 @@ def capture_frame_thread(tcamObj, updatePixmap, updateLog):
                 thermal_matrix = cv2.rotate(thermal_matrix, cv2.ROTATE_180)
 
                 if frame_status == "valid" and thermal_matrix.size > 0:
+                    if use_lock_rgb_capture_with_thermal:
+                        enable_rgb_capture_with_lock = True
                     min_temp = np.round(np.min(thermal_matrix), 2)
                     max_temp = np.round(np.max(thermal_matrix), 2)
  
@@ -406,7 +409,7 @@ def capture_frame_thread(tcamObj, updatePixmap, updateLog):
                 t_elapsed = str(t2 - t1)
                 info_str = info_str + "; total_time_per_frame: " + t_elapsed
                 mySrc.status_signal.emit(info_str)
-                time.sleep(0.1)
+                # time.sleep(0.1)
 
             else:
                 time.sleep(0.25)
