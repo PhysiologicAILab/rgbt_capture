@@ -63,7 +63,8 @@ class RGBTCam(QWidget):
         self.fps_list = [1, 2, 5, 10, 15, 25, 30, 60]
 
         self.camObj = None
-        self.focus_rgb = int(0.35 * 256)
+        # self.focus_rgb = int(np.round(0.1 * 255))
+        self.focus_rgb = 10
 
         self.rgb_focus_type = 1 #0: Manual; 1: Autofocus
         self.rgb_focus_type_options = [1, 0]
@@ -154,6 +155,8 @@ class RGBTCam(QWidget):
             rgb_camera_connect_status = False
 
         if rgb_camera_connect_status:
+            self.camObj.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+            self.camObj.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
             self.camObj.set(cv2.CAP_PROP_AUTOFOCUS, 0)
             self.camObj.set(cv2.CAP_PROP_FPS, fps)
             self.camObj.set(28, self.focus_rgb)     # min: 0, max: 255, increment:5
@@ -343,9 +346,10 @@ def capture_frame_thread_rgb(camObj, updateRGBPixmap, updateLog):
                     rgb_ret, rgb_matrix = camObj.read()
 
                     rgb_matrix = cv2.rotate(rgb_matrix, cv2.ROTATE_180)
-                    enable_rgb_capture_with_lock = False
 
                     if rgb_ret:
+                        if use_lock_rgb_capture_with_thermal:
+                            enable_rgb_capture_with_lock = False
                         rgb_matrix_vis = deepcopy(rgb_matrix)
                         mySrc.data_signal_rgb.emit([rgb_matrix_vis, rgb_ret])
 
@@ -358,7 +362,7 @@ def capture_frame_thread_rgb(camObj, updateRGBPixmap, updateLog):
                     t_elapsed = str(t2 - t1)
                     info_str = info_str + "; total_time_per_frame RGB: " + t_elapsed
                     mySrc.status_signal.emit(info_str)
-                    # time.sleep(0.1)
+                    time.sleep(0.05)
 
             else:
                 time.sleep(0.25)
@@ -409,7 +413,7 @@ def capture_frame_thread(tcamObj, updatePixmap, updateLog):
                 t_elapsed = str(t2 - t1)
                 info_str = info_str + "; total_time_per_frame: " + t_elapsed
                 mySrc.status_signal.emit(info_str)
-                # time.sleep(0.1)
+                time.sleep(0.05)
 
             else:
                 time.sleep(0.25)

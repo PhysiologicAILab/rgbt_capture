@@ -274,8 +274,8 @@ class Ui_RGBT(object):
         self.horizontalSlider_focus.setMaximum(255)
         self.horizontalSlider_focus.setSingleStep(5)
         self.horizontalSlider_focus.setPageStep(20)
-        self.horizontalSlider_focus.setValue(20)
-        self.horizontalSlider_focus.setSliderPosition(20)
+        self.horizontalSlider_focus.setValue(10)
+        self.horizontalSlider_focus.setSliderPosition(10)
         self.horizontalSlider_focus.setOrientation(Qt.Horizontal)
 
         self.gridLayout_3.addWidget(self.horizontalSlider_focus, 3, 7, 1, 1)
