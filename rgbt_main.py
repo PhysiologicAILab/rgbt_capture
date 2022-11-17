@@ -345,7 +345,7 @@ def capture_frame_thread_rgb(camObj, updateRGBPixmap, updateLog):
                     info_str = ""
                     rgb_ret, rgb_matrix = camObj.read()
 
-                    rgb_matrix = cv2.rotate(rgb_matrix, cv2.ROTATE_180)
+                    # rgb_matrix = cv2.rotate(rgb_matrix, cv2.ROTATE_180)
 
                     if rgb_ret:
                         if use_lock_rgb_capture_with_thermal:
@@ -386,7 +386,7 @@ def capture_frame_thread(tcamObj, updatePixmap, updateLog):
                 t1 = time.time()
                 info_str = ""
                 thermal_matrix, frame_status = tcamObj.capture_frame()
-                thermal_matrix = cv2.rotate(thermal_matrix, cv2.ROTATE_180)
+                # thermal_matrix = cv2.rotate(thermal_matrix, cv2.ROTATE_180)
 
                 if frame_status == "valid" and thermal_matrix.size > 0:
                     if use_lock_rgb_capture_with_thermal:
