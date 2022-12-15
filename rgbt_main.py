@@ -94,7 +94,7 @@ class RGBTCam(QWidget):
         self.ui.acquireButton.setEnabled(False)
         self.ui.recordButton.setEnabled(False)
 
-        self.imgAcqLoop = threading.Thread(name='imgAcqLoop', target=capture_frame_thread, daemon=True, args=(
+        self.imgAcqLoop = threading.Thread(name='imgAcqLoop', target=thermal_capture_frame_thread, daemon=True, args=(
             self.tcamObj, self.updatePixmap, self.updateLog))
         self.imgAcqLoop.start()
 
@@ -163,7 +163,7 @@ class RGBTCam(QWidget):
 
             if not acquisition_thread_rgb_live:
                 acquisition_thread_rgb_live = True
-                self.imgAcqLoop_rgb = threading.Thread(name='imgAcqLoop_rgb', target=capture_frame_thread_rgb, daemon=True, args=(
+                self.imgAcqLoop_rgb = threading.Thread(name='imgAcqLoop_rgb', target=rgb_capture_frame_thread, daemon=True, args=(
                     self.camObj, self.updateRGBPixmap, self.updateLog))
                 self.imgAcqLoop_rgb.start()
 
@@ -308,7 +308,7 @@ class Communicate(QObject):
     save_signal_rgb = Signal(np.ndarray)
     status_signal = Signal(str)
 
-def save_frame(thermal_matrix):
+def save_frame_thermal(thermal_matrix):
     global num_frames, subdir_path
     num_frames += 1
     utc_sec = str((datetime.datetime.utcnow() - datetime.datetime(1970, 1, 1)).total_seconds()).replace('.', '_')
@@ -327,7 +327,7 @@ def save_frame_rgb(rgb_matrix):
     cv2.imwrite(os.path.join(subdir_path, f'{num_frames_rgb:05d}' + '_' + utc_sec + '.png'), rgb_matrix)
 
 
-def capture_frame_thread_rgb(camObj, updateRGBPixmap, updateLog):
+def rgb_capture_frame_thread(camObj, updateRGBPixmap, updateLog):
     # Setup the signal-slot mechanism.
     mySrc = Communicate()
     mySrc.data_signal_rgb.connect(updateRGBPixmap)
@@ -370,12 +370,12 @@ def capture_frame_thread_rgb(camObj, updateRGBPixmap, updateLog):
             mySrc.status_signal.emit("Acquisition thread termination. Please restart the application...")
             break
 
-def capture_frame_thread(tcamObj, updatePixmap, updateLog):
+def thermal_capture_frame_thread(tcamObj, updatePixmap, updateLog):
     # Setup the signal-slot mechanism.
     mySrc = Communicate()
     mySrc.data_signal.connect(updatePixmap)
     mySrc.status_signal.connect(updateLog)
-    mySrc.save_signal.connect(save_frame)
+    mySrc.save_signal.connect(save_frame_thermal)
 
     global acquisition_status, thermal_camera_connect_status, keep_acquisition_thread
     global recording_status, pseudocolor, use_lock_rgb_capture_with_thermal, enable_rgb_capture_with_lock
