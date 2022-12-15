@@ -10,7 +10,8 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 # from datetime import datetime
 
 # root_path = r'D:\Temp\data'
-root_path = r'D:\TCC_04Nov\TCC\P3_D1\2022-11-04_14-20-28'
+# root_path = r'D:\TCC_04Nov\TCC\P3_D1\2022-11-04_14-20-28'
+root_path = r'D:\repos\jj\ucl\rgbt_capture\recorded_frames\pilot\P1_main\2022-11-17_19-19-23'
 
 save_path = os.path.join(root_path, 'plots')
 if not os.path.exists(save_path):

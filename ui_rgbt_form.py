@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'rgbt_form.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.2.4
+## Created by: Qt User Interface Compiler version 6.4.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -40,7 +40,7 @@ class Ui_RGBT(object):
         font = QFont()
         font.setPointSize(14)
         self.label.setFont(font)
-        self.label.setPixmap(QPixmap(u"../../../../Downloads/figure.png"))
+        self.label.setPixmap(QPixmap(u"images/banner.png"))
         self.label.setScaledContents(True)
         self.label.setWordWrap(True)
 

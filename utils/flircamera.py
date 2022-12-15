@@ -1,6 +1,6 @@
 import PySpin
 import os
-os.system("sudo sysctl -p")
+# os.system("sudo sysctl -p")
 
 class CameraManager():
     def __init__(self):

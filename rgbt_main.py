@@ -157,9 +157,9 @@ class RGBTCam(QWidget):
         if rgb_camera_connect_status:
             self.camObj.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
             self.camObj.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-            self.camObj.set(cv2.CAP_PROP_AUTOFOCUS, 0)
-            self.camObj.set(cv2.CAP_PROP_FPS, fps)
-            self.camObj.set(28, self.focus_rgb)     # min: 0, max: 255, increment:5
+            # self.camObj.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+            # self.camObj.set(cv2.CAP_PROP_FPS, fps)
+            # self.camObj.set(28, self.focus_rgb)     # min: 0, max: 255, increment:5
 
             if not acquisition_thread_rgb_live:
                 acquisition_thread_rgb_live = True
@@ -345,7 +345,7 @@ def rgb_capture_frame_thread(camObj, updateRGBPixmap, updateLog):
                     info_str = ""
                     rgb_ret, rgb_matrix = camObj.read()
 
-                    rgb_matrix = cv2.rotate(rgb_matrix, cv2.ROTATE_180)
+                    # rgb_matrix = cv2.rotate(rgb_matrix, cv2.ROTATE_180)
 
                     if rgb_ret:
                         if use_lock_rgb_capture_with_thermal:
@@ -362,7 +362,7 @@ def rgb_capture_frame_thread(camObj, updateRGBPixmap, updateLog):
                     t_elapsed = str(t2 - t1)
                     info_str = info_str + "; total_time_per_frame RGB: " + t_elapsed
                     mySrc.status_signal.emit(info_str)
-                    time.sleep(0.05)
+                    # time.sleep(0.05)
 
             else:
                 time.sleep(0.25)
@@ -386,7 +386,7 @@ def thermal_capture_frame_thread(tcamObj, updatePixmap, updateLog):
                 t1 = time.time()
                 info_str = ""
                 thermal_matrix, frame_status = tcamObj.capture_frame()
-                thermal_matrix = cv2.rotate(thermal_matrix, cv2.ROTATE_180)
+                # thermal_matrix = cv2.rotate(thermal_matrix, cv2.ROTATE_180)
 
                 if frame_status == "valid" and thermal_matrix.size > 0:
                     if use_lock_rgb_capture_with_thermal:
@@ -413,7 +413,7 @@ def thermal_capture_frame_thread(tcamObj, updatePixmap, updateLog):
                 t_elapsed = str(t2 - t1)
                 info_str = info_str + "; total_time_per_frame: " + t_elapsed
                 mySrc.status_signal.emit(info_str)
-                time.sleep(0.05)
+                # time.sleep(0.05)
 
             else:
                 time.sleep(0.25)
