@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import argparse
 import shutil
 from datetime import datetime
-import subprocess
 
 
 def main(args_parser):
@@ -111,12 +110,11 @@ def main(args_parser):
         print(i, '--', rgb_indx, ':', min(diff_ts), "\r", end="")
 
         save_fn, _ = os.path.splitext(therm_images[i])
-        # save_fn = save_fn.split('_')[1:]
-        # save_fn = '_'.join(save_fn)
+        _, rgb_ext = os.path.splitext(rgb_images[rgb_indx])
 
         # Copy time matched RGB frame 
         shutil.copyfile(os.path.join(datapath_rgb, rgb_images[rgb_indx]), os.path.join(savepath_rgb, rgb_images[rgb_indx]))
-        shutil.move(os.path.join(savepath_rgb, rgb_images[rgb_indx]), os.path.join(savepath_rgb, save_fn + '.jpg'))
+        shutil.move(os.path.join(savepath_rgb, rgb_images[rgb_indx]), os.path.join(savepath_rgb, save_fn + rgb_ext))
 
         th_img = np.load(os.path.join(datapath_thermal, therm_images[i]))
         rgb_img = cv2.imread(os.path.join(datapath_rgb, rgb_images[rgb_indx]))
@@ -134,15 +132,6 @@ def main(args_parser):
 
         # if i > 100:
         #     break
-
-    # command = "ffmpeg -analyzeduration 100M -probesize 100M -protocol_whitelist file,crypto,udp,rtp -framerate " + str(fps_thermal) + " -pattern_type glob -i '"+os.path.basename(
-    #     savepath_rgb_video) + "/*.jpg' -c:v libx264 -pix_fmt yuv420p video.mp4"
-
-    # print('*'*50)
-    # print(command)
-    # print('*'*50)
-    # p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
-    # print(p.communicate())
 
 
 if __name__ == "__main__":
