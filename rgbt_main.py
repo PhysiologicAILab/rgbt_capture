@@ -1,5 +1,6 @@
 # This Python file uses the following encoding: utf-8
 import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 from pathlib import Path
 import sys
 import threading
@@ -155,8 +156,8 @@ class RGBTCam(QWidget):
             rgb_camera_connect_status = False
 
         if rgb_camera_connect_status:
-            self.camObj.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-            self.camObj.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+            # self.camObj.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+            # self.camObj.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
             # self.camObj.set(cv2.CAP_PROP_AUTOFOCUS, 0)
             # self.camObj.set(cv2.CAP_PROP_FPS, fps)
             # self.camObj.set(28, self.focus_rgb)     # min: 0, max: 255, increment:5
